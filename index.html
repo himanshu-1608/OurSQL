@@ -25,11 +25,14 @@
             <h6 class="dash-bottom2">&amp; Developers <a href="./html/creators.html">here</a></h6>
         </div>
         <div id="query-n-result">
-            <h4 style="text-align: center; margin: 10px 0px;">Your SQL Query</h4>
+            <h4 style="text-align: center; margin: 10px 0px;">OurSQL</h4>
             <textarea id="query-text"></textarea>
-            <div class="container" id="query-error"><span class="red-text">Response to your Query: </span></div>
+            <div class="row" style="margin: 0px 0px;">
+                <div class="col s10" id="query-error"><span class="red-text">Response to your Query will be shown here</span></div>
+                <div class="col s2 center-align green-text" id="suggestQuery">Suggested Queries</div>
+            </div>
             <div class="flex-auto-queries">
-                <button class="sub-auto-queries pulse" id="auto-select-all">SELECT <strong>*</strong></button>
+                <button class="sub-auto-queries" id="auto-select-all">SELECT <strong>*</strong></button>
                 <button class="sub-auto-queries" id="auto-select">SELECT</button>
                 <button class="sub-auto-queries" id="auto-insert">INSERT</button>
                 <button class="sub-auto-queries" id="auto-delete">DELETE</button>

@@ -1,129 +1,19 @@
-let currDB = "",
-    currTable = "";
+jsonStr = `{"databases":["db1","db2"],"tables":[["table11","table12"],["table21","table22","table23"]],"table-details":{"db1+table11":[{"colName":"index","colType":"int"},{"colName":"empName","colType":"varchar(50)"},{"colName":"workingHours","colType":"int"}],"db1+table12":[{"colName":"col121","colType":"int"},{"colName":"col122","colType":"varchar(50)"},{"colName":"col123","colType":"int"}],"db2+table21":[{"colName":"index","colType":"int"},{"colName":"empName","colType":"varchar(50)"},{"colName":"workingHours","colType":"int"}],"db2+table22":[{"colName":"col221","colType":"int"},{"colName":"col222","colType":"varchar(50)"},{"colName":"col223","colType":"int"}],"db2+table23":[{"colName":"col231","colType":"int"},{"colName":"col232","colType":"varchar(50)"},{"colName":"col233","colType":"int"}]},"table-data":{"db1+table11":[[1,"Emp1",38],[2,"Emp2",40],[1,"Emp3",45]],"db1+table12":[[1,"Entry121",121],[2,"Entry122",122],[3,"Entry123",123]],"db2+table21":[[1,"Entry211",211],[2,"Entry212",212],[3,"Entry213",213]],"db2+table22":[[1,"Entry221",221],[2,"Entry222",222],[3,"Entry223",223]],"db2+table23":[[1,"Entry231",231],[1,"Entry232",232],[1,"Entry233",233]]}}`;
 
-$(document).ready(function() {
-    $('#accordion').accordion({
-        collapsible: true,
-        animate: 500,
-        active: false,
-        heightStyle: "content",
-        icons: { header: "ui-icon-plus", activeHeader: "ui-icon-minus" }
-    });
-    $('.tables').click(function() {
-        console.log($(this)[0].innerText);
-        currTable = $(this)[0].innerText;
-    });
-    $('.databases').click(function() {
-        console.log($(this)[0].innerText);
-        currTable = "";
-        if ($("#accordion").accordion("option", "active") !== false) {
-            currDB = $(this)[0].innerText;
-            renderTablesOfDB(retrieveTablesFromDB(currDB), currDB);
-        } else {
-            currDB = "";
-            $(prevp).removeClass('border');
-        }
-    });
+jsonObj = JSON.parse(jsonStr);
 
-    function checkQueryText() {
-        //Do validation and print answer in result tab
-        const inpQuery = document.getElementById("query-text");
-        reg = /SELECT/i;
-        if (reg.test(inpQuery.value)) {
-            inpQuery.style.color = "lightgreen";
-            document.getElementById("query-error").innerText = "Response: Looks Good";
-            document.getElementById("query-error").style.color = "green";
-        } else {
-            inpQuery.style.color = "red";
-            document.getElementById("query-error").innerText = "Response: You are writing a shitty query";
-            document.getElementById("query-error").style.color = "red";
+function addDynamicAccordionElements() {
+    let innerElements = "";
+    for (dbName of jsonObj.databases) {
+        innerElements += `<h5 class="ui-accordion-header databases yellow-text black">${dbName}</h5>`;
+        innerElements += `<div class="ui-accordion-content yellow-text black">`;
+        const relatedTables = retrieveTablesFromDB(dbName);
+        for (tables of relatedTables) {
+            innerElements += `<p class="tables">${tables}</p>`;
         }
+        innerElements += `</div>`;
     }
-    $('#query-text').on('input', checkQueryText);
-
-    $("#execute-button").click(executeQuery);
-
-    function executeQuery() {
-        if ($("#query-text").val().trim() !== "") {
-            addToHistory();
-            checkQueryText();
-        } else {
-            alert("Empty SQL Query!");
-        }
-    }
-
-    function addToHistory() {
-        const text = $("#query-text").val().trim();
-        $("#history-ol").prepend(`<li>${text}</li>`);
-        const lengthOL = $("#history-ol").children().length;
-        if (lengthOL > 10) {
-            $('#history-ol li:last-child').remove();
-        }
-    }
-    $("#auto-save").click(save_query);
-
-    function save_query() {
-        const queryText = $("#query-text").val().trim();
-        if (queryText == "") {
-            alert("Empty SQL Query!");
-        } else {
-            $("#save-ol").prepend(`<li>${queryText}</li>`);
-        }
-    }
-
-    $("#auto-clear").click(function() {
-        const queryText = $("#query-text").val().trim();
-        if (queryText == "") {
-            alert("Empty SQL Query!");
-        } else if (window.confirm("Do you want to clear this query"))
-            $("#query-text").val("");
-    });
-
-    $(".sub-auto-queries").click(validate_selection);
-    $("#auto-select-all").click(function() {
-        const queryText = $("#query-text");
-        if (validate_selection()) {
-            queryText.val("USE " + currDB + ";\nSELECT * FROM " + currTable + ";");
-            queryText.css('color', 'green');
-        }
-    });
-
-    function validate_selection() {
-        const queryError = $("#query-error");
-        if (currDB == "" && currTable == "") {
-            queryError.text("Response: PLEASE SELECT A DATABASE AND A TABLE");
-            queryError.css('color', 'red');
-            return false;
-        } else if (currTable == "") {
-            queryError.text("Response: PLEASE SELECT A TABLE");
-            queryError.css('color', 'red');
-            return false;
-        } else {
-            queryError.text("Response: All good till now");
-            queryError.css('color', 'green');
-            return true;
-        }
-    }
-    let prevp;
-    $(".tables").click(function() {
-        $(prevp).removeClass('border');
-        //$(this).css({ "border": "red solid 2px" });
-        $(this).addClass('border');
-        prevp = $(this);
-        var tables = displayTableContent(currDB, currTable);
-    });
-
-});
-
-function renderTablesOfDB(tables, currDB) {
-    let tableDetails = "";
-    tableDetails += `<table class="highlight"><thead><tr><th>Table Name</th><th>Drop Table</th><th>Delete All Entries</th></tr></thead>`;
-    for (var i = 0; i < tables.length; i++) {
-        tableDetails += ('<tr><td>' + tables[i] + '</td><td><button>Drop</button></td><td><button>Delete Entries</button></td></tr>');
-    }
-    tableDetails += '</table>';
-    console.log(tableDetails);
-    $("#result-response").html(tableDetails);
+    $('#accordion').html(innerElements);
 }
 
 function retrieveTablesFromDB(dbName) {
@@ -131,17 +21,119 @@ function retrieveTablesFromDB(dbName) {
     return jsonObj.tables[currDbIndex];
 }
 
-jsonStr = `{"databases":["db1","db2"],"tables":[["table11","table12"],["table21","table22","table23"]],"table-details":{"db1+table11":[{"colName":"index","colType":"int"},{"colName":"empName","colType":"varchar(50)"},{"colName":"workingHours","colType":"int"}],"db1+table12":[{"colName":"col121","colType":"int"},{"colName":"col122","colType":"varchar(50)"},{"colName":"col123","colType":"int"}],"db2+table21":[{"colName":"index","colType":"int"},{"colName":"empName","colType":"varchar(50)"},{"colName":"workingHours","colType":"int"}],"db2+table22":[{"colName":"col21","colType":"int"},{"colName":"col22","colType":"varchar(50)"},{"colName":"col23","colType":"int"}],"db2+table23":[{"colName":"col21","colType":"int"},{"colName":"col22","colType":"varchar(50)"},{"colName":"col23","colType":"int"}]},"table-data":{"db1+table11":[[1,"Emp1",38],[2,"Emp2",40],[1,"Emp3",45]],"db1+table12":[[121,"Entry 121",12],[122,"Entry 122",13],[123,"Entry 123",14]],"db2+table21":[[211,"Entry 21",21],[221,"Entry 22",22],[231,"Entry 23",23]],"db2+table22":[[211,"Entry 21",21],[221,"Entry 22",22],[231,"Entry 23",23]],"db2+table23":[[211,"Entry 21",21],[221,"Entry 22",22],[231,"Entry 23",23]]}}`;
+function setError(responseText) {
+    $('#query-error').text(responseText);
+}
 
-jsonObj = JSON.parse(jsonStr);
+function checkQueryText() {
+    let responseText = "";
+    let inpQuery = $("#query-text").val();
+    tempArray = inpQuery.split("\n");
+    inpQuery = tempArray.join(" ");
+    const dbSemiColon = inpQuery.indexOf(";");
+    useReg = /use/i;
+    if (useReg.test(inpQuery.slice(0, 3)) && dbSemiColon !== -1) {
+        dbName = inpQuery.slice(3, dbSemiColon).trim();
+        responseText += `Database Chosen: ${dbName}`;
+        setError(responseText);
+        operation = inpQuery.slice(dbSemiColon + 1).trim();
+        switch (true) {
+            case /select /i.test(operation.slice(0, 7)):
+                selectQueryHandler(operation, responseText);
+                break;
+            case /insert /i.test(operation.slice(0, 7)):
+                insertQueryHandler(operation, responseText);
+                break;
+            case /delete /i.test(operation.slice(0, 7)):
+                deleteQueryHandler(operation, responseText);
+                break;
+            case /update /i.test(operation.slice(0, 7)):
+                updateQueryHandler(operation, responseText);
+                break;
+            default:
+                responseText += "Query not matching any one of(SELECT/INSERT/UPDATE/DELETE)";
+                break;
+        }
+    } else {
+        $('#query-error').html(`Please choose a database eg. <span class="pink-text">USE dbName;</span>`);
+    }
+}
+
+function selectQueryHandler(operation, responseText) {
+
+}
+
+function insertQueryHandler(operation, responseText) {
+
+}
+
+function updateQueryHandler(operation, responseText) {
+
+}
+
+function deleteQueryHandler(operation, responseText) {
+
+}
+
+function executeQuery() {
+    if ($("#query-text").val().trim() !== "") {
+        addToHistory();
+        checkQueryText();
+    } else {
+        alert("Empty SQL Query!");
+    }
+}
+
+function addToHistory() {
+    const text = $("#query-text").val().trim();
+    $("#history-ol").prepend(`<li>${text}</li>`);
+    const lengthOL = $("#history-ol").children().length;
+    if (lengthOL > 10) {
+        $('#history-ol li:last-child').remove();
+    }
+}
+
+function saveQueryToTab() {
+    const queryText = $("#query-text").val().trim();
+    if (queryText == "") {
+        alert("Empty SQL Query!");
+    } else {
+        $("#save-ol").prepend(`<li>${queryText}</li>`);
+    }
+}
+
+function validateDTSelection() {
+    const queryError = $("#query-error");
+    if (currDB == "" && currTable == "") {
+        queryError.text("Response: PLEASE SELECT A DATABASE AND A TABLE");
+        queryError.css('color', 'red');
+        return false;
+    } else if (currTable == "") {
+        queryError.text("Response: PLEASE SELECT A TABLE");
+        queryError.css('color', 'red');
+        return false;
+    } else {
+        return true;
+    }
+}
+
+function renderTablesOfDB(tables) {
+    let tableDetails = "";
+    tableDetails += `<table class="highlight"><thead><tr><th>Table Name</th><th>Drop Table</th><th>Delete All Entries</th></tr></thead><tbody>`;
+    for (table of tables) {
+        tableDetails += ('<tr><td>' + table + '</td><td><i class="material-icons small" style="vertical-align:middle">delete_forever</i>Drop</td><td><i class="material-icons small" style="vertical-align:middle">delete_sweep</i>Delete Entries</td></tr>');
+    }
+    tableDetails += '</tbody></table>';
+    $("#result-response").html(tableDetails);
+}
 
 function displayTableContent(dbName, tableName) {
-    currDB = dbName;
-    currTable = tableName;
+    const currDB = dbName;
+    const currTable = tableName;
     tableDetails = jsonObj["table-details"][currDB + "+" + currTable];
     let innerContent = "";
-    innerContent += `<h5>Data of table <strong>${tableName}</strong> is:\n</h5>`;
-    innerContent += `<table class = "centered highlight"><hr><hr><hr><thead class = ""><tr>`;
+    innerContent += `<h5>Data of table "<strong>${tableName}</strong>" is:</h5>`;
+    innerContent += `<table border="5" class="centered highlight"><hr><thead><tr>`;
     for (const columnDetails of tableDetails) {
         innerContent += `<th>${columnDetails.colName}</th>`;
     }
@@ -153,11 +145,206 @@ function displayTableContent(dbName, tableName) {
         for (items of nThRow) {
             innerContent += `<td>${items}</td>`;
         }
-        innerContent += `</tr>`
+        innerContent += `</tr>`;
     }
     innerContent += `</tbody></table>`;
     $("#result-response").html(innerContent);
 }
+
+function confirmClear() {
+    return window.confirm("Are you sure you want to clear the current query?");
+}
+
+function insertionQuery() {
+    let innerContent = "USE " + currDB + ";\n";
+    innerContent += `INSERT INTO ${currTable}\nVALUES\n(`;
+    tableDetails = jsonObj["table-details"][currDB + "+" + currTable];
+    var abc = [];
+    for (const columnDetails of tableDetails) {
+        abc.push(`\'${columnDetails.colName}\'`);
+    }
+    let columnName = abc.join(" , ");
+    innerContent += `${columnName} );`;
+    queryText = $("#query-text");
+    queryText.val(innerContent);
+    queryText.css('color', 'lightgreen');
+}
+
+function selectionQuery() {
+    let innerContent = "USE " + currDB + ";\n";
+    innerContent += `SELECT `;
+    tableDetails = jsonObj["table-details"][currDB + "+" + currTable];
+    var abc = [];
+    for (const columnDetails of tableDetails) {
+        abc.push(`${columnDetails.colName}`);
+    }
+    let columnName = abc.join(" , ");
+    innerContent += `${columnName}\nFROM ${currTable};`;
+    queryText = $("#query-text");
+    queryText.val(innerContent);
+    queryText.css('color', 'lightgreen');
+    checkQueryText();
+}
+
+function deleteQuery() {
+    if (validateDTSelection()) {
+        const queryText = $("#query-text");
+        if (queryText.val().trim() !== "") {
+            if (confirmClear()) {
+                queryText.val("");
+                deleteQuery();
+            }
+        } else {
+            const tableDetails = jsonObj["table-details"][currDB + "+" + currTable];
+            let query = "USE " + currDB + ";\nDELETE " + currTable;
+            query += " WHERE ";
+            for (let i = 0; i < tableDetails.length; i++) {
+                if (i < tableDetails.length - 1)
+                    query += `${tableDetails[i].colName}` + " = \"\" AND ";
+                else
+                    query += `${tableDetails[i].colName}` + " = \"\"";
+            }
+            query += ";";
+            queryText.val(query);
+            queryText.css('color', 'lightgreen');
+        }
+    }
+}
+
+function updateQuery() {
+    if (validateDTSelection()) {
+        const queryText = $("#query-text");
+        if (queryText.val().trim() !== "") {
+            if (confirmClear()) {
+                queryText.val("");
+                updateQuery();
+            }
+        } else {
+            queryText.val();
+            const tableDetails = jsonObj["table-details"][currDB + "+" + currTable];
+            let query = "USE " + currDB + ";\nUPDATE " + currTable + " SET ";
+            for (let i = 0; i < tableDetails.length; i++) {
+                if (i < tableDetails.length - 1)
+                    query += `${tableDetails[i].colName}` + " = \"\" , ";
+                else
+                    query += `${tableDetails[i].colName}` + " = \"\"";
+            }
+            query += " WHERE ";
+            for (let i = 0; i < tableDetails.length; i++) {
+                if (i < tableDetails.length - 1)
+                    query += `${tableDetails[i].colName}` + " = \"\" AND ";
+                else
+                    query += `${tableDetails[i].colName}` + " = \"\"";
+            }
+            query += ";";
+            queryText.val(query);
+            queryText.css('color', 'lightgreen');
+        }
+    }
+}
+
+
+let currDB = "",
+    currTable = "",
+    prevp;
+
+addDynamicAccordionElements();
+
+$(document).ready(function() {
+    $('#accordion').accordion({
+        collapsible: true,
+        animate: 500,
+        active: false,
+        heightStyle: "content",
+        icons: { header: "ui-icon-plus", activeHeader: "ui-icon-minus" }
+    });
+
+    $('.databases').click(function() {
+        currTable = "";
+        if ($("#accordion").accordion("option", "active") !== false) {
+            currDB = $(this)[0].innerText;
+            renderTablesOfDB(retrieveTablesFromDB(currDB));
+        } else {
+            currDB = "";
+            $(prevp).removeClass('border');
+        }
+    });
+
+    $('#query-text').on('input', checkQueryText);
+
+    $("#execute-button").click(executeQuery);
+
+    $("#auto-save").click(saveQueryToTab);
+
+    $("#auto-clear").click(function() {
+        const queryText = $("#query-text").val().trim();
+        if (queryText == "") {
+            alert("Empty SQL Query!");
+        } else if (confirmClear()) {
+            $("#query-text").val("");
+        }
+    });
+
+    $(".sub-auto-queries").click(validateDTSelection);
+
+    $("#auto-select-all").click(function() {
+        const queryText = $("#query-text");
+        if (validateDTSelection()) {
+            if (queryText.val().trim() !== "") {
+                if (confirmClear()) {
+                    queryText.val("");
+                    queryText.val("USE " + currDB + ";\nSELECT * FROM " + currTable + ";");
+                    queryText.css('color', 'lightgreen');
+                }
+            } else {
+                queryText.val("USE " + currDB + ";\nSELECT * FROM " + currTable + ";");
+                queryText.css('color', 'lightgreen');
+            }
+        }
+    });
+
+    $(".tables").click(function() {
+        currTable = $(this)[0].innerText;
+        $(prevp).removeClass('border');
+        $(this).addClass('border');
+        prevp = $(this);
+        displayTableContent(currDB, currTable);
+    });
+
+    $("#auto-insert").click(function() {
+        if (validateDTSelection()) {
+            const queryText = $("#query-text").val().trim();
+            if (queryText != "") {
+                if (confirmClear()) {
+                    $("#query-text").val("");
+                    insertionQuery();
+                }
+            } else {
+                insertionQuery();
+            }
+        }
+    });
+
+    $("#auto-select").click(function() {
+        if (validateDTSelection()) {
+            const queryText = $("#query-text").val().trim();
+            if (queryText != "") {
+                if (confirmClear()) {
+                    $("#query-text").val("");
+                    selectionQuery();
+                }
+            } else {
+                selectionQuery();
+            }
+        }
+    });
+
+    $("#auto-update").click(updateQuery);
+
+    $("#auto-delete").click(deleteQuery);
+});
+
+
 
 
 //get all databases
